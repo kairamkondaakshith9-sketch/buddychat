@@ -15,8 +15,14 @@ export default function ChatApp() {
   const [activeChat, setActiveChat] = useState(null)
   const [showNewChat, setShowNewChat] = useState(false)
   const [showNewGroup, setShowNewGroup] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 640)
 
-  // Listen to all chats this user is part of
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 640)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   useEffect(() => {
     if (!user) return
     const q = query(collection(db, 'chats'), orderBy('updatedAt', 'desc'))
@@ -29,7 +35,6 @@ export default function ChatApp() {
     return unsub
   }, [user])
 
-  // Mark user online / offline
   useEffect(() => {
     if (!user) return
     const ref = doc(db, 'users', user.uid)
@@ -44,24 +49,40 @@ export default function ChatApp() {
     await signOut(auth)
   }
 
+  function handleSelectChat(chat) {
+    setActiveChat(chat)
+  }
+
+  function handleBack() {
+    setActiveChat(null)
+  }
+
+  const showSidebar = !isMobile || !activeChat
+  const showMain = !isMobile || activeChat
+
   return (
     <div className={styles.app}>
-      <Sidebar
-        chats={chats}
-        activeChat={activeChat}
-        onSelectChat={setActiveChat}
-        onNewChat={() => setShowNewChat(true)}
-        onNewGroup={() => setShowNewGroup(true)}
-        onLogout={handleLogout}
-        currentUser={user}
-      />
+      {showSidebar && (
+        <Sidebar
+          chats={chats}
+          activeChat={activeChat}
+          onSelectChat={handleSelectChat}
+          onNewChat={() => setShowNewChat(true)}
+          onNewGroup={() => setShowNewGroup(true)}
+          onLogout={handleLogout}
+          currentUser={user}
+          isMobile={isMobile}
+        />
+      )}
 
-      <main className={styles.main}>
-        {activeChat
-          ? <ChatWindow chat={activeChat} currentUser={user} onBack={() => setActiveChat(null)} />
-          : <Welcome name={user?.displayName} onNewChat={() => setShowNewChat(true)} onNewGroup={() => setShowNewGroup(true)} />
-        }
-      </main>
+      {showMain && (
+        <main className={isMobile && activeChat ? styles.mainVisible : styles.main}>
+          {activeChat
+            ? <ChatWindow chat={activeChat} currentUser={user} onBack={handleBack} />
+            : <Welcome name={user?.displayName} onNewChat={() => setShowNewChat(true)} onNewGroup={() => setShowNewGroup(true)} />
+          }
+        </main>
+      )}
 
       {showNewChat && (
         <NewChatModal
@@ -89,8 +110,8 @@ function Welcome({ name, onNewChat, onNewGroup }) {
         <h2>Hey, {name}!</h2>
         <p>Select a chat or start a new one</p>
         <div className={styles.welcomeBtns}>
-          <button onClick={onNewChat}>✉️ New message</button>
-          <button onClick={onNewGroup}>👥 New group</button>
+          <button onClick={onNewChat}>✉️ Message</button>
+          <button onClick={onNewGroup}>👥 Group</button>
         </div>
       </div>
     </div>

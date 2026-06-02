@@ -1,6 +1,7 @@
 .app {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background: var(--bg);
 }
@@ -10,6 +11,24 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+}
+
+/* On mobile, hide main when no chat is selected */
+@media (max-width: 640px) {
+  .main {
+    display: none;
+  }
+  .mainVisible {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    background: var(--bg);
+  }
+  .sidebarHidden {
+    display: none;
+  }
 }
 
 .welcome {
@@ -27,10 +46,7 @@
   gap: 10px;
 }
 
-.welcomeIcon {
-  font-size: 56px;
-  margin-bottom: 8px;
-}
+.welcomeIcon { font-size: 56px; margin-bottom: 8px; }
 
 .welcomeInner h2 {
   font-size: 22px;
@@ -38,10 +54,7 @@
   color: var(--text);
 }
 
-.welcomeInner p {
-  color: var(--text2);
-  font-size: 14px;
-}
+.welcomeInner p { color: var(--text2); font-size: 14px; }
 
 .welcomeBtns {
   display: flex;
@@ -59,6 +72,4 @@
   transition: background 0.2s;
 }
 
-.welcomeBtns button:hover {
-  background: var(--bg4);
-}
+.welcomeBtns button:hover { background: var(--bg4); }
