@@ -148,3 +148,90 @@
 }
 .createBtn:hover:not(:disabled) { background: var(--accent2); }
 .createBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.tabRow {
+  display: flex;
+  gap: 4px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tabBtn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--text2);
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.tabBtn:hover { background: var(--bg3); }
+.tabActive { background: var(--accent) !important; color: #fff !important; }
+
+.tabBadge {
+  background: #fff;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.actionBtn {
+  padding: 6px 12px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.actionBtn:hover { background: var(--accent2); }
+
+.actionBtnGreen {
+  padding: 6px 12px;
+  background: #1D9E75;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.actionBtnRed {
+  padding: 6px 10px;
+  background: #f56565;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.statusTag {
+  font-size: 12px;
+  color: var(--text3);
+  padding: 4px 8px;
+  background: var(--bg3);
+  border-radius: 6px;
+  flex-shrink: 0;
+}

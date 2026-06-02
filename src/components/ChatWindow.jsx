@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import {
   collection, addDoc, onSnapshot, query, orderBy,
-  serverTimestamp, doc, updateDoc, increment
+  serverTimestamp, doc, updateDoc, increment, writeBatch
 } from 'firebase/firestore'
 import { db } from '../firebase/config'
-import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns'
+import { format, isToday, isYesterday } from 'date-fns'
 import { Avatar } from './Sidebar'
 import styles from './ChatWindow.module.css'
+
+const EMOJIS = ['😀','😂','😍','🥰','😎','😢','😡','👍','👎','❤️','🔥','🎉','😅','🤔','😭','🙏','💪','✅','🎊','😊','👋','🤣','😏','😒','🥹','😤','🫡','🤩','😇','🥳']
 
 function formatMsgTime(ts) {
   if (!ts?.toDate) return ''
@@ -33,10 +35,23 @@ function groupMessages(msgs) {
   return groups
 }
 
+function ReadReceipt({ msg, currentUser, members }) {
+  if (msg.senderId !== currentUser.uid) return null
+  const otherMembers = members.filter(id => id !== currentUser.uid)
+  const readBy = otherMembers.filter(id => msg.readBy?.[id])
+  const allRead = readBy.length === otherMembers.length
+  const delivered = !!msg.createdAt
+
+  if (allRead) return <span className={styles.readTick} title="Read">✓✓</span>
+  if (delivered) return <span className={styles.sentTick} title="Sent">✓✓</span>
+  return <span className={styles.sentTick}>✓</span>
+}
+
 export default function ChatWindow({ chat, currentUser, onBack }) {
   const [messages, setMessages] = useState([])
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [showEmoji, setShowEmoji] = useState(false)
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -46,11 +61,28 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
 
   useEffect(() => {
     const q = query(collection(db, 'chats', chat.id, 'messages'), orderBy('createdAt', 'asc'))
-    const unsub = onSnapshot(q, snap => {
-      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    const unsub = onSnapshot(q, async snap => {
+      const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      setMessages(msgs)
+
+      // Mark unread messages as read
+      const batch = writeBatch(db)
+      let hasUpdates = false
+      snap.docs.forEach(d => {
+        const msg = d.data()
+        if (msg.senderId !== currentUser.uid && !msg.readBy?.[currentUser.uid]) {
+          batch.update(d.ref, { [`readBy.${currentUser.uid}`]: true })
+          hasUpdates = true
+        }
+      })
+      if (hasUpdates) {
+        await batch.commit()
+        // Reset unread count
+        await updateDoc(doc(db, 'chats', chat.id), { [`unread.${currentUser.uid}`]: 0 })
+      }
     })
     return unsub
-  }, [chat.id])
+  }, [chat.id, currentUser.uid])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -62,14 +94,16 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
     if (!trimmed || sending) return
     setSending(true)
     setText('')
+    setShowEmoji(false)
     try {
+      const readBy = { [currentUser.uid]: true }
       await addDoc(collection(db, 'chats', chat.id, 'messages'), {
         text: trimmed,
         senderId: currentUser.uid,
         senderName: currentUser.displayName,
         createdAt: serverTimestamp(),
+        readBy,
       })
-      // Update chat metadata
       const chatRef = doc(db, 'chats', chat.id)
       const unreadUpdate = {}
       chat.members.filter(id => id !== currentUser.uid).forEach(id => {
@@ -81,24 +115,25 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
         updatedAt: serverTimestamp(),
         ...unreadUpdate,
       })
-    } catch (err) {
-      console.error(err)
-    }
+    } catch (err) { console.error(err) }
     setSending(false)
     inputRef.current?.focus()
   }
 
   function handleKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
+  }
+
+  function addEmoji(emoji) {
+    setText(prev => prev + emoji)
+    inputRef.current?.focus()
   }
 
   const grouped = groupMessages(messages)
+  const lastMsgId = messages[messages.length - 1]?.id
 
   return (
-    <div className={styles.window}>
+    <div className={styles.window} onClick={() => setShowEmoji(false)}>
       <div className={styles.header}>
         <button className={styles.back} onClick={onBack}>←</button>
         <Avatar name={chatName} size={38} />
@@ -112,10 +147,7 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
 
       <div className={styles.messages}>
         {grouped.length === 0 && (
-          <div className={styles.emptyMsg}>
-            <span>👋</span>
-            <p>Say hello to {chatName}!</p>
-          </div>
+          <div className={styles.emptyMsg}><span>👋</span><p>Say hello to {chatName}!</p></div>
         )}
         {grouped.map((group, gi) => {
           const isMe = group[0].senderId === currentUser.uid
@@ -130,7 +162,10 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
                       {msg.text}
                     </div>
                     {mi === group.length - 1 && (
-                      <span className={styles.msgTime}>{formatMsgTime(msg.createdAt)}</span>
+                      <div className={`${styles.msgMeta} ${isMe ? styles.msgMetaMine : ''}`}>
+                        <span className={styles.msgTime}>{formatMsgTime(msg.createdAt)}</span>
+                        {isMe && <ReadReceipt msg={msg} currentUser={currentUser} members={chat.members} />}
+                      </div>
                     )}
                   </div>
                 ))}
@@ -142,19 +177,30 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
         <div ref={bottomRef} />
       </div>
 
-      <form className={styles.inputRow} onSubmit={sendMessage}>
+      {showEmoji && (
+        <div className={styles.emojiPicker} onClick={e => e.stopPropagation()}>
+          {EMOJIS.map(e => (
+            <button key={e} className={styles.emojiBtn} onClick={() => addEmoji(e)}>{e}</button>
+          ))}
+        </div>
+      )}
+
+      <form className={styles.inputRow} onSubmit={sendMessage} onClick={e => e.stopPropagation()}>
+        <button
+          type="button"
+          className={styles.emojiToggle}
+          onClick={e => { e.stopPropagation(); setShowEmoji(v => !v) }}
+        >😊</button>
         <textarea
           ref={inputRef}
           className={styles.input}
-          placeholder="Type a message… (Enter to send)"
+          placeholder="Type a message…"
           value={text}
           onChange={e => setText(e.target.value)}
           onKeyDown={handleKey}
           rows={1}
         />
-        <button className={styles.sendBtn} type="submit" disabled={!text.trim() || sending}>
-          ➤
-        </button>
+        <button className={styles.sendBtn} type="submit" disabled={!text.trim() || sending}>➤</button>
       </form>
     </div>
   )

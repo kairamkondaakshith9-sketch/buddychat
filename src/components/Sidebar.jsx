@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { formatDistanceToNow } from 'date-fns'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
+import { db } from '../firebase/config'
 import styles from './Sidebar.module.css'
 
 function getInitials(name = '') {
@@ -26,6 +28,16 @@ export { Avatar, getInitials }
 
 export default function Sidebar({ chats, activeChat, onSelectChat, onNewChat, onNewGroup, onLogout, currentUser }) {
   const [search, setSearch] = useState('')
+  const [pendingRequests, setPendingRequests] = useState(0)
+
+  useEffect(() => {
+    if (!currentUser) return
+    const q = query(collection(db, 'friendRequests'),
+      where('to', '==', currentUser.uid),
+      where('status', '==', 'pending'))
+    const unsub = onSnapshot(q, snap => setPendingRequests(snap.size))
+    return unsub
+  }, [currentUser])
 
   const filtered = chats.filter(c => {
     const name = c.isGroup ? c.groupName : c.memberNames?.[currentUser?.uid === c.members?.[0] ? c.members?.[1] : c.members?.[0]]
@@ -67,13 +79,16 @@ export default function Sidebar({ chats, activeChat, onSelectChat, onNewChat, on
       </div>
 
       <div className={styles.newBtns}>
-        <button className={styles.newBtn} onClick={onNewChat}>✉️ Message</button>
+        <button className={styles.newBtn} onClick={onNewChat}>
+          ✉️ Message
+          {pendingRequests > 0 && <span className={styles.reqBadge}>{pendingRequests}</span>}
+        </button>
         <button className={styles.newBtn} onClick={onNewGroup}>👥 Group</button>
       </div>
 
       <div className={styles.list}>
         {filtered.length === 0 && (
-          <div className={styles.empty}>No chats yet.<br />Start one above!</div>
+          <div className={styles.empty}>No chats yet.<br />Add friends to start!</div>
         )}
         {filtered.map(chat => (
           <button
