@@ -1,0 +1,64 @@
+.app {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcomeInner {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.welcomeIcon {
+  font-size: 56px;
+  margin-bottom: 8px;
+}
+
+.welcomeInner h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.welcomeInner p {
+  color: var(--text2);
+  font-size: 14px;
+}
+
+.welcomeBtns {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.welcomeBtns button {
+  padding: 10px 20px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.welcomeBtns button:hover {
+  background: var(--bg4);
+}
