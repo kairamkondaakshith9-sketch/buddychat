@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: center;
   background: var(--bg);
-  padding: 24px;
+  padding: 16px;
 }
 
 .card {
@@ -13,19 +13,19 @@
   background: var(--bg2);
   border: 1px solid var(--border2);
   border-radius: 20px;
-  padding: 40px 36px;
+  padding: 28px 28px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
 }
 
 .logo {
-  font-size: 40px;
+  font-size: 32px;
   text-align: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .title {
   font-family: var(--mono);
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   text-align: center;
   color: var(--text);
@@ -35,9 +35,9 @@
 .subtitle {
   text-align: center;
   color: var(--text2);
-  font-size: 14px;
-  margin-top: 4px;
-  margin-bottom: 28px;
+  font-size: 13px;
+  margin-top: 3px;
+  margin-bottom: 20px;
 }
 
 .tabs {
@@ -45,19 +45,21 @@
   background: var(--bg3);
   border-radius: var(--radius-sm);
   padding: 4px;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
   gap: 4px;
 }
 
 .tab {
   flex: 1;
-  padding: 8px;
+  padding: 7px;
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
   background: transparent;
   color: var(--text2);
   transition: all 0.2s;
+  border: none;
+  cursor: pointer;
 }
 
 .tab.active {
@@ -68,17 +70,17 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .field label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text2);
 }
@@ -87,11 +89,12 @@
   background: var(--bg3);
   border: 1px solid var(--border2);
   border-radius: var(--radius-sm);
-  padding: 11px 14px;
+  padding: 10px 12px;
   color: var(--text);
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s;
+  font-family: var(--font);
 }
 
 .field input:focus {
@@ -103,18 +106,21 @@
   color: var(--red);
   background: rgba(245,101,101,0.1);
   border-radius: var(--radius-sm);
-  padding: 9px 12px;
+  padding: 8px 12px;
 }
 
 .submit {
-  padding: 12px;
+  padding: 11px;
   background: var(--accent);
   color: #fff;
   border-radius: var(--radius-sm);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   transition: background 0.2s, opacity 0.2s;
-  margin-top: 4px;
+  margin-top: 2px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font);
 }
 
 .submit:hover { background: var(--accent2); }
@@ -128,7 +134,6 @@
   cursor: pointer;
   text-align: center;
   padding: 4px;
-  margin-top: 4px;
   transition: opacity 0.2s;
   font-family: var(--font);
 }
@@ -172,19 +177,4 @@
   padding: 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
-}
-
-@media (max-height: 700px) {
-  .page {
-    align-items: flex-start;
-    padding: 16px;
-  }
-  .card {
-    margin: 0 auto;
-  }
-}
-
-.card {
-  overflow-y: auto;
-  max-height: 95vh;
 }
