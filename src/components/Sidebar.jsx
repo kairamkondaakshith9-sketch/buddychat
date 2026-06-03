@@ -4,6 +4,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import Avatar from './Avatar'
 import { EditProfileModal } from './ProfileModal'
+import { requestNotificationPermission } from './useNotifications'
 import styles from './Sidebar.module.css'
 
 export { default as AvatarComp } from './Avatar'
@@ -12,6 +13,9 @@ export default function Sidebar({ chats, activeChat, onSelectChat, onNewChat, on
   const [search, setSearch] = useState('')
   const [pendingRequests, setPendingRequests] = useState(0)
   const [showEditProfile, setShowEditProfile] = useState(false)
+  const [notifPermission, setNotifPermission] = useState(
+    'Notification' in window ? Notification.permission : 'denied'
+  )
   const [, forceUpdate] = useState(0)
 
   useEffect(() => {
@@ -22,6 +26,17 @@ export default function Sidebar({ chats, activeChat, onSelectChat, onNewChat, on
     const unsub = onSnapshot(q, snap => setPendingRequests(snap.size))
     return unsub
   }, [currentUser])
+
+  async function handleEnableNotifications() {
+    const granted = await requestNotificationPermission()
+    setNotifPermission(granted ? 'granted' : 'denied')
+    if (granted) {
+      new Notification('🔔 BuddyChat notifications enabled!', {
+        body: "You'll get notified when friends message you.",
+        icon: '/icon-192.png',
+      })
+    }
+  }
 
   const filtered = chats.filter(c => {
     const name = c.isGroup ? c.groupName : c.memberNames?.[currentUser?.uid === c.members?.[0] ? c.members?.[1] : c.members?.[0]]
@@ -59,6 +74,17 @@ export default function Sidebar({ chats, activeChat, onSelectChat, onNewChat, on
           <span className={styles.onlineDot} />
         </div>
       </div>
+
+      {notifPermission !== 'granted' && notifPermission !== 'denied' && (
+        <button className={styles.notifBanner} onClick={handleEnableNotifications}>
+          🔔 Enable notifications
+        </button>
+      )}
+      {notifPermission === 'default' && (
+        <button className={styles.notifBanner} onClick={handleEnableNotifications}>
+          🔔 Tap to enable notifications
+        </button>
+      )}
 
       <div className={styles.searchRow}>
         <input
