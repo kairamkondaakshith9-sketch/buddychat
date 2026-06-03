@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import {
   collection, addDoc, onSnapshot, query, orderBy,
-  serverTimestamp, doc, updateDoc, increment, writeBatch
+  serverTimestamp, doc, updateDoc, increment, writeBatch, getDoc
 } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import { format, isToday, isYesterday } from 'date-fns'
-import { Avatar } from './Sidebar'
+import Avatar from './Avatar'
+import { UserProfileModal } from './ProfileModal'
 import styles from './ChatWindow.module.css'
 
 const EMOJIS = ['😀','😂','😍','🥰','😎','😢','😡','👍','👎','❤️','🔥','🎉','😅','🤔','😭','🙏','💪','✅','🎊','😊','👋','🤣','😏','😒','🥹','😤','🫡','🤩','😇','🥳']
@@ -16,6 +17,19 @@ function formatMsgTime(ts) {
   if (isToday(d)) return format(d, 'h:mm a')
   if (isYesterday(d)) return 'Yesterday ' + format(d, 'h:mm a')
   return format(d, 'MMM d, h:mm a')
+}
+
+function formatLastSeen(ts, online) {
+  if (online) return '🟢 Online'
+  if (!ts?.toDate) return ''
+  try {
+    const d = ts.toDate()
+    const diff = new Date() - d
+    if (diff < 60000) return 'Last seen just now'
+    if (diff < 3600000) return `Last seen ${Math.floor(diff/60000)}m ago`
+    if (diff < 86400000) return `Last seen today at ${format(d, 'h:mm a')}`
+    return `Last seen ${format(d, 'MMM d')}`
+  } catch { return '' }
 }
 
 function groupMessages(msgs) {
@@ -40,11 +54,8 @@ function ReadReceipt({ msg, currentUser, members }) {
   const otherMembers = members.filter(id => id !== currentUser.uid)
   const readBy = otherMembers.filter(id => msg.readBy?.[id])
   const allRead = readBy.length === otherMembers.length
-  const delivered = !!msg.createdAt
-
   if (allRead) return <span className={styles.readTick} title="Read">✓✓</span>
-  if (delivered) return <span className={styles.sentTick} title="Sent">✓✓</span>
-  return <span className={styles.sentTick}>✓</span>
+  return <span className={styles.sentTick} title="Sent">✓✓</span>
 }
 
 export default function ChatWindow({ chat, currentUser, onBack }) {
@@ -52,20 +63,31 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [showEmoji, setShowEmoji] = useState(false)
+  const [showProfile, setShowProfile] = useState(false)
+  const [otherUserProfile, setOtherUserProfile] = useState(null)
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
 
+  const otherUserId = !chat.isGroup ? chat.members.find(id => id !== currentUser.uid) : null
   const chatName = chat.isGroup
     ? chat.groupName
-    : chat.memberNames?.[chat.members.find(id => id !== currentUser.uid)] || 'Chat'
+    : chat.memberNames?.[otherUserId] || 'Chat'
+  const chatPhoto = chat.isGroup ? null : chat.memberPhotos?.[otherUserId] || null
+
+  // Load other user's live profile for last seen
+  useEffect(() => {
+    if (!otherUserId) return
+    const unsub = onSnapshot(doc(db, 'users', otherUserId), d => {
+      if (d.exists()) setOtherUserProfile(d.data())
+    })
+    return unsub
+  }, [otherUserId])
 
   useEffect(() => {
     const q = query(collection(db, 'chats', chat.id, 'messages'), orderBy('createdAt', 'asc'))
     const unsub = onSnapshot(q, async snap => {
       const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       setMessages(msgs)
-
-      // Mark unread messages as read
       const batch = writeBatch(db)
       let hasUpdates = false
       snap.docs.forEach(d => {
@@ -77,7 +99,6 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
       })
       if (hasUpdates) {
         await batch.commit()
-        // Reset unread count
         await updateDoc(doc(db, 'chats', chat.id), { [`unread.${currentUser.uid}`]: 0 })
       }
     })
@@ -96,20 +117,18 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
     setText('')
     setShowEmoji(false)
     try {
-      const readBy = { [currentUser.uid]: true }
       await addDoc(collection(db, 'chats', chat.id, 'messages'), {
         text: trimmed,
         senderId: currentUser.uid,
         senderName: currentUser.displayName,
         createdAt: serverTimestamp(),
-        readBy,
+        readBy: { [currentUser.uid]: true },
       })
-      const chatRef = doc(db, 'chats', chat.id)
       const unreadUpdate = {}
       chat.members.filter(id => id !== currentUser.uid).forEach(id => {
         unreadUpdate[`unread.${id}`] = increment(1)
       })
-      await updateDoc(chatRef, {
+      await updateDoc(doc(db, 'chats', chat.id), {
         lastMessage: trimmed.length > 60 ? trimmed.slice(0, 60) + '…' : trimmed,
         lastSenderId: currentUser.uid,
         updatedAt: serverTimestamp(),
@@ -124,23 +143,24 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
   }
 
-  function addEmoji(emoji) {
-    setText(prev => prev + emoji)
-    inputRef.current?.focus()
-  }
-
   const grouped = groupMessages(messages)
-  const lastMsgId = messages[messages.length - 1]?.id
 
   return (
     <div className={styles.window} onClick={() => setShowEmoji(false)}>
       <div className={styles.header}>
         <button className={styles.back} onClick={onBack}>←</button>
-        <Avatar name={chatName} size={38} />
-        <div className={styles.headerInfo}>
-          <div className={styles.chatName}>{chatName}</div>
-          <div className={styles.chatSub}>
-            {chat.isGroup ? `${chat.members.length} members` : 'Direct message'}
+        <div className={styles.headerClickable} onClick={() => !chat.isGroup && setShowProfile(true)}>
+          <Avatar name={chatName} photoURL={chatPhoto} size={38} />
+          <div className={styles.headerInfo}>
+            <div className={styles.chatName}>{chatName}</div>
+            <div className={styles.chatSub}>
+              {chat.isGroup
+                ? `${chat.members.length} members`
+                : otherUserProfile
+                  ? formatLastSeen(otherUserProfile.lastSeen, otherUserProfile.online)
+                  : 'Direct message'
+              }
+            </div>
           </div>
         </div>
       </div>
@@ -180,17 +200,13 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
       {showEmoji && (
         <div className={styles.emojiPicker} onClick={e => e.stopPropagation()}>
           {EMOJIS.map(e => (
-            <button key={e} className={styles.emojiBtn} onClick={() => addEmoji(e)}>{e}</button>
+            <button key={e} className={styles.emojiBtn} onClick={() => { setText(p => p + e); inputRef.current?.focus() }}>{e}</button>
           ))}
         </div>
       )}
 
       <form className={styles.inputRow} onSubmit={sendMessage} onClick={e => e.stopPropagation()}>
-        <button
-          type="button"
-          className={styles.emojiToggle}
-          onClick={e => { e.stopPropagation(); setShowEmoji(v => !v) }}
-        >😊</button>
+        <button type="button" className={styles.emojiToggle} onClick={e => { e.stopPropagation(); setShowEmoji(v => !v) }}>😊</button>
         <textarea
           ref={inputRef}
           className={styles.input}
@@ -202,6 +218,14 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
         />
         <button className={styles.sendBtn} type="submit" disabled={!text.trim() || sending}>➤</button>
       </form>
+
+      {showProfile && otherUserId && (
+        <UserProfileModal
+          uid={otherUserId}
+          currentUserId={currentUser.uid}
+          onClose={() => setShowProfile(false)}
+        />
+      )}
     </div>
   )
 }

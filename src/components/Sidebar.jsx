@@ -2,33 +2,17 @@ import { useState, useEffect } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase/config'
+import Avatar from './Avatar'
+import { EditProfileModal } from './ProfileModal'
 import styles from './Sidebar.module.css'
 
-function getInitials(name = '') {
-  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
-}
-
-function Avatar({ name, size = 40 }) {
-  const colors = ['#7c6af7','#3dd68c','#f6ad55','#fc8181','#63b3ed','#f687b3','#68d391']
-  const idx = name ? name.charCodeAt(0) % colors.length : 0
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%',
-      background: colors[idx] + '33',
-      border: `2px solid ${colors[idx]}55`,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.36, fontWeight: 600, color: colors[idx], flexShrink: 0
-    }}>
-      {getInitials(name)}
-    </div>
-  )
-}
-
-export { Avatar, getInitials }
+export { default as AvatarComp } from './Avatar'
 
 export default function Sidebar({ chats, activeChat, onSelectChat, onNewChat, onNewGroup, onLogout, currentUser }) {
   const [search, setSearch] = useState('')
   const [pendingRequests, setPendingRequests] = useState(0)
+  const [showEditProfile, setShowEditProfile] = useState(false)
+  const [, forceUpdate] = useState(0)
 
   useEffect(() => {
     if (!currentUser) return
@@ -50,6 +34,12 @@ export default function Sidebar({ chats, activeChat, onSelectChat, onNewChat, on
     return chat.memberNames?.[otherId] || 'Unknown'
   }
 
+  function getChatPhoto(chat) {
+    if (chat.isGroup) return null
+    const otherId = chat.members.find(id => id !== currentUser?.uid)
+    return chat.memberPhotos?.[otherId] || null
+  }
+
   function getTime(ts) {
     if (!ts?.toDate) return ''
     try { return formatDistanceToNow(ts.toDate(), { addSuffix: false }) } catch { return '' }
@@ -62,9 +52,10 @@ export default function Sidebar({ chats, activeChat, onSelectChat, onNewChat, on
           <div className={styles.brand}>💬 BuddyChat</div>
           <button className={styles.logoutBtn} onClick={onLogout} title="Sign out">↩</button>
         </div>
-        <div className={styles.user}>
-          <Avatar name={currentUser?.displayName} size={32} />
+        <div className={styles.user} onClick={() => setShowEditProfile(true)} title="Edit profile">
+          <Avatar name={currentUser?.displayName} photoURL={currentUser?.photoURL} size={34} />
           <span className={styles.userName}>{currentUser?.displayName}</span>
+          <span className={styles.editHint}>✏️</span>
           <span className={styles.onlineDot} />
         </div>
       </div>
@@ -96,7 +87,7 @@ export default function Sidebar({ chats, activeChat, onSelectChat, onNewChat, on
             className={`${styles.chatItem} ${activeChat?.id === chat.id ? styles.active : ''}`}
             onClick={() => onSelectChat(chat)}
           >
-            <Avatar name={getChatName(chat)} size={42} />
+            <Avatar name={getChatName(chat)} photoURL={getChatPhoto(chat)} size={42} />
             <div className={styles.chatInfo}>
               <div className={styles.chatName}>{getChatName(chat)}</div>
               <div className={styles.chatPreview}>{chat.lastMessage || 'No messages yet'}</div>
@@ -110,6 +101,16 @@ export default function Sidebar({ chats, activeChat, onSelectChat, onNewChat, on
           </button>
         ))}
       </div>
+
+      {showEditProfile && (
+        <EditProfileModal
+          currentUser={currentUser}
+          onClose={(updated) => {
+            setShowEditProfile(false)
+            if (updated) forceUpdate(n => n + 1)
+          }}
+        />
+      )}
     </aside>
   )
 }
