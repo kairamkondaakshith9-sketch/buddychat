@@ -1,13 +1,13 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0,0,0,0.4);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
-  padding: 20px;
+  padding: 16px;
 }
 
 .modal {
@@ -16,7 +16,7 @@
   border-radius: 20px;
   width: 100%;
   max-width: 440px;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.12);
   overflow: hidden;
 }
 
@@ -24,15 +24,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 20px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--border);
 }
-
-.modalHeader h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text);
-}
+.modalHeader h3 { font-size: 16px; font-weight: 600; color: var(--text); }
 
 .closeBtn {
   background: none;
@@ -41,113 +36,10 @@
   padding: 4px 6px;
   border-radius: 6px;
   transition: color 0.2s;
+  border: none;
+  cursor: pointer;
 }
 .closeBtn:hover { color: var(--text); }
-
-.modalBody {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.searchInput {
-  width: 100%;
-  padding: 11px 14px;
-  background: var(--bg3);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  font-size: 14px;
-  outline: none;
-  transition: border-color 0.2s;
-}
-.searchInput:focus { border-color: var(--accent); }
-
-.hint {
-  font-size: 13px;
-  color: var(--text3);
-  text-align: center;
-  padding: 8px;
-}
-
-.userList {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  max-height: 280px;
-  overflow-y: auto;
-}
-
-.userItem {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  background: none;
-  border: 1px solid transparent;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.userItem:hover { background: var(--bg3); }
-.selectedItem { background: var(--bg4); border-color: var(--accent); }
-
-.uname {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text);
-}
-.uemail {
-  font-size: 12px;
-  color: var(--text2);
-}
-
-.checkmark {
-  color: var(--accent);
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--accent);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 4px 10px;
-  border-radius: 999px;
-}
-
-.chip button {
-  background: none;
-  color: rgba(255,255,255,0.7);
-  font-size: 12px;
-  line-height: 1;
-}
-.chip button:hover { color: #fff; }
-
-.createBtn {
-  padding: 12px;
-  background: var(--accent);
-  color: #fff;
-  border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-weight: 600;
-  margin-top: 4px;
-  transition: background 0.2s, opacity 0.2s;
-}
-.createBtn:hover:not(:disabled) { background: var(--accent2); }
-.createBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .tabRow {
   display: flex;
@@ -170,6 +62,7 @@
   justify-content: center;
   gap: 6px;
   transition: all 0.2s;
+  cursor: pointer;
 }
 .tabBtn:hover { background: var(--bg3); }
 .tabActive { background: var(--accent) !important; color: #fff !important; }
@@ -188,6 +81,68 @@
   padding: 0 4px;
 }
 
+.modalBody {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: var(--font);
+}
+.searchInput:focus { border-color: var(--accent); }
+
+.hint { font-size: 13px; color: var(--text3); text-align: center; padding: 8px; }
+
+.userList { display: flex; flex-direction: column; gap: 4px; }
+
+.userItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: 1px solid transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.userItem:hover { background: var(--bg3); }
+.selectedItem { background: var(--bg3); border-color: var(--accent); }
+
+.uname { font-size: 14px; font-weight: 500; color: var(--text); }
+.uemail { font-size: 12px; color: var(--text2); }
+
+.checkmark { color: var(--accent); font-size: 16px; font-weight: 700; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.chip button { background: none; color: rgba(255,255,255,0.7); font-size: 12px; line-height: 1; cursor: pointer; border: none; }
+.chip button:hover { color: #fff; }
+
 .actionBtn {
   padding: 6px 12px;
   background: var(--accent);
@@ -200,12 +155,13 @@
   white-space: nowrap;
   transition: background 0.2s;
   flex-shrink: 0;
+  font-family: var(--font);
 }
 .actionBtn:hover { background: var(--accent2); }
 
 .actionBtnGreen {
   padding: 6px 12px;
-  background: #1D9E75;
+  background: var(--green);
   color: #fff;
   border-radius: 6px;
   font-size: 12px;
@@ -214,10 +170,12 @@
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
+  font-family: var(--font);
 }
+
 .actionBtnRed {
   padding: 6px 10px;
-  background: #f56565;
+  background: var(--red);
   color: #fff;
   border-radius: 6px;
   font-size: 12px;
@@ -225,6 +183,7 @@
   border: none;
   cursor: pointer;
   flex-shrink: 0;
+  font-family: var(--font);
 }
 
 .statusTag {
@@ -235,3 +194,20 @@
   border-radius: 6px;
   flex-shrink: 0;
 }
+
+.createBtn {
+  width: 100%;
+  padding: 12px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 4px;
+  transition: background 0.2s, opacity 0.2s;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font);
+}
+.createBtn:hover:not(:disabled) { background: var(--accent2); }
+.createBtn:disabled { opacity: 0.4; cursor: not-allowed; }

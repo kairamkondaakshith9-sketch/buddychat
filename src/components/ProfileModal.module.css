@@ -1,13 +1,13 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0,0,0,0.4);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 200;
-  padding: 20px;
+  padding: 16px;
 }
 
 .modal {
@@ -16,7 +16,7 @@
   border-radius: 20px;
   width: 100%;
   max-width: 380px;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.12);
   overflow: hidden;
   position: relative;
 }
@@ -41,15 +41,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 32px 20px 20px;
-  background: linear-gradient(180deg, var(--bg3) 0%, var(--bg2) 100%);
+  padding: 28px 20px 18px;
+  background: var(--bg3);
   gap: 8px;
 }
 
 .profileName { font-size: 20px; font-weight: 600; color: var(--text); }
 .profileEmail { font-size: 13px; color: var(--text2); }
 
-.profileInfo { padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+.profileInfo { padding: 14px; display: flex; flex-direction: column; gap: 8px; }
 
 .infoRow {
   display: flex;
@@ -68,7 +68,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 20px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--border);
 }
 .modalHeader h3 { font-size: 16px; font-weight: 600; color: var(--text); }
@@ -78,7 +78,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 
 .avatarEdit {
@@ -91,7 +91,7 @@
 .avatarOverlay {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -104,17 +104,12 @@
 }
 .avatarEdit:hover .avatarOverlay { opacity: 1; }
 
-.field {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+.field { width: 100%; display: flex; flex-direction: column; gap: 6px; }
 .field label { font-size: 13px; color: var(--text2); font-weight: 500; }
 
 .input {
   width: 100%;
-  padding: 11px 14px;
+  padding: 10px 14px;
   background: var(--bg3);
   border: 1px solid var(--border2);
   border-radius: var(--radius-sm);

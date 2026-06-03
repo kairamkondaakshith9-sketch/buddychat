@@ -11,29 +11,74 @@
 @media (max-width: 640px) {
   .sidebar {
     width: 100vw;
+    width: 100dvw;
     border-right: none;
   }
 }
 
-.header { padding: 16px; border-bottom: 1px solid var(--border); }
+.header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
 
 .headerTop {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
-.brand { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--accent); }
+.brand {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+}
 
-.logoutBtn { background: none; color: var(--text3); font-size: 18px; padding: 4px 6px; border-radius: 6px; transition: color 0.2s; }
+.logoutBtn {
+  background: none;
+  color: var(--text3);
+  font-size: 18px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: color 0.2s;
+}
 .logoutBtn:hover { color: var(--red); }
 
-.user { display: flex; align-items: center; gap: 8px; }
-.userName { font-size: 13px; font-weight: 500; color: var(--text); }
-.onlineDot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); margin-left: auto; }
+.user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 4px;
+  transition: background 0.15s;
+}
+.user:hover { background: var(--bg3); }
 
-.searchRow { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.userName {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  flex: 1;
+}
+
+.editHint { font-size: 12px; color: var(--text3); }
+
+.onlineDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  margin-left: auto;
+}
+
+.searchRow {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
 
 .search {
   width: 100%;
@@ -48,11 +93,17 @@
 }
 .search:focus { border-color: var(--accent); }
 
-.newBtns { display: flex; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.newBtns {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
 
 .newBtn {
   flex: 1;
-  padding: 10px;
+  padding: 9px;
   background: var(--bg3);
   border: 1px solid var(--border2);
   border-radius: var(--radius-sm);
@@ -60,20 +111,44 @@
   font-size: 13px;
   font-weight: 500;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 .newBtn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-.list { flex: 1; overflow-y: auto; }
+.reqBadge {
+  background: var(--red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 999px;
+  min-width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
 
-.empty { text-align: center; color: var(--text3); font-size: 13px; padding: 40px 20px; line-height: 1.8; }
+.list { flex: 1; overflow-y: auto; background: var(--bg2); }
+
+.empty {
+  text-align: center;
+  color: var(--text3);
+  font-size: 13px;
+  padding: 40px 20px;
+  line-height: 1.8;
+}
 
 .chatItem {
   display: flex;
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 14px;
-  background: none;
+  padding: 13px 14px;
+  background: var(--bg2);
   border: none;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
@@ -81,7 +156,7 @@
   transition: background 0.15s;
 }
 .chatItem:hover { background: var(--bg3); }
-.chatItem.active { background: var(--bg4); border-left: 2px solid var(--accent); }
+.chatItem.active { background: var(--bg3); border-left: 3px solid var(--accent); }
 
 .chatInfo { flex: 1; min-width: 0; }
 .chatName { font-size: 14px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -102,22 +177,3 @@
   justify-content: center;
   padding: 0 5px;
 }
-
-.reqBadge {
-  background: #f56565;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  border-radius: 999px;
-  min-width: 16px;
-  height: 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 4px;
-  margin-left: 4px;
-}
-
-.editHint { font-size: 12px; color: var(--text3); margin-left: 2px; }
-.user { cursor: pointer; border-radius: 8px; padding: 4px; transition: background 0.15s; }
-.user:hover { background: var(--bg3); }
