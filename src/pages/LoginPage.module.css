@@ -173,3 +173,18 @@
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
 }
+
+@media (max-height: 700px) {
+  .page {
+    align-items: flex-start;
+    padding: 16px;
+  }
+  .card {
+    margin: 0 auto;
+  }
+}
+
+.card {
+  overflow-y: auto;
+  max-height: 95vh;
+}
