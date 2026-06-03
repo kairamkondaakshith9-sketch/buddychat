@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { collection, query, getDocs, addDoc, serverTimestamp, getDoc } from 'firebase/firestore'
 import { db } from '../firebase/config'
-import { Avatar } from './Sidebar'
+import Avatar from './Avatar'
 import styles from './Modal.module.css'
 
 export default function NewGroupModal({ currentUser, onClose, onGroupCreated }) {

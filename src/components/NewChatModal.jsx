@@ -4,7 +4,7 @@ import {
   where, doc, getDoc, query, onSnapshot, updateDoc, deleteDoc
 } from 'firebase/firestore'
 import { db } from '../firebase/config'
-import { Avatar } from './Sidebar'
+import Avatar from './Avatar'
 import styles from './Modal.module.css'
 
 export default function NewChatModal({ currentUser, onClose, onChatCreated }) {
