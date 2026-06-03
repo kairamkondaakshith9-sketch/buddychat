@@ -9,7 +9,7 @@ import { auth } from '../firebase/config'
 import styles from './LoginPage.module.css'
 
 export default function LoginPage() {
-  const [mode, setMode] = useState('login') // 'login' | 'register' | 'forgot'
+  const [mode, setMode] = useState('login')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -34,14 +34,13 @@ export default function LoginPage() {
       }
     } catch (err) {
       const msgs = {
-        'auth/email-already-in-use': 'Email already registered. Try logging in.',
+        'auth/email-already-in-use': 'Email already registered.',
         'auth/invalid-email': 'Invalid email address.',
         'auth/weak-password': 'Password must be at least 6 characters.',
         'auth/user-not-found': 'No account found with this email.',
-        'auth/wrong-password': 'Incorrect password.',
+        'auth/wrong-password': 'Wrong email or password.',
         'auth/invalid-credential': 'Wrong email or password.',
         'auth/too-many-requests': 'Too many attempts. Try again later.',
-        'auth/missing-email': 'Please enter your email address.',
       }
       setError(msgs[err.code] || err.message)
     }
@@ -49,65 +48,33 @@ export default function LoginPage() {
   }
 
   function switchMode(m) {
-    setMode(m)
-    setError('')
-    setResetSent(false)
-    setEmail('')
-    setPassword('')
-    setName('')
+    setMode(m); setError(''); setResetSent(false)
+    setEmail(''); setPassword(''); setName('')
   }
 
-  // ── Forgot password screen ──
   if (mode === 'forgot') {
     return (
       <div className={styles.page}>
         <div className={styles.card}>
           <div className={styles.logo}>🔑</div>
           <h1 className={styles.title}>Reset Password</h1>
-          <p className={styles.subtitle}>
-            {resetSent
-              ? 'Check your email for the reset link!'
-              : "Enter your email and we'll send you a reset link"}
-          </p>
-
           {resetSent ? (
-            <div className={styles.successBox}>
-              <div className={styles.successIcon}>📧</div>
-              <p>A password reset email has been sent to <strong>{email}</strong></p>
-              <p className={styles.successHint}>
-                Check your inbox (and spam folder). Click the link in the email to set a new password. Then come back and sign in!
-              </p>
-              <button className={styles.submit} onClick={() => switchMode('login')} style={{ marginTop: 16 }}>
-                Back to Sign in
-              </button>
-            </div>
+            <>
+              <p className={styles.subtitle}>Reset email sent to <strong>{email}</strong> — check your inbox and spam folder!</p>
+              <button className={styles.submit} onClick={() => switchMode('login')}>← Back to Sign in</button>
+            </>
           ) : (
             <form className={styles.form} onSubmit={handleSubmit}>
+              <p className={styles.subtitle}>Enter your email to receive a reset link</p>
               <div className={styles.field}>
-                <label>Email address</label>
-                <input
-                  type="email"
-                  placeholder="you@email.com"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  autoFocus
-                  required
-                />
+                <label>Email</label>
+                <input type="email" placeholder="you@email.com" value={email} onChange={e => setEmail(e.target.value)} autoFocus required />
               </div>
-
               {error && <p className={styles.error}>{error}</p>}
-
               <button className={styles.submit} type="submit" disabled={loading}>
                 {loading ? 'Sending…' : '📧 Send reset email'}
               </button>
-
-              <button
-                type="button"
-                className={styles.backLink}
-                onClick={() => switchMode('login')}
-              >
-                ← Back to Sign in
-              </button>
+              <button type="button" className={styles.forgotLink} onClick={() => switchMode('login')}>← Back to Sign in</button>
             </form>
           )}
         </div>
@@ -115,7 +82,6 @@ export default function LoginPage() {
     )
   }
 
-  // ── Login / Register screen ──
   return (
     <div className={styles.page}>
       <div className={styles.card}>
@@ -125,13 +91,13 @@ export default function LoginPage() {
 
         <div className={styles.tabs}>
           <button className={`${styles.tab} ${mode === 'login' ? styles.active : ''}`} onClick={() => switchMode('login')}>Sign in</button>
-          <button className={`${styles.tab} ${mode === 'register' ? styles.active : ''}`} onClick={() => switchMode('register')}>Create account</button>
+          <button className={`${styles.tab} ${mode === 'register' ? styles.active : ''}`} onClick={() => switchMode('register')}>Register</button>
         </div>
 
         <form className={styles.form} onSubmit={handleSubmit}>
           {mode === 'register' && (
             <div className={styles.field}>
-              <label>Your name</label>
+              <label>Name</label>
               <input type="text" placeholder="e.g. Arjun" value={name} onChange={e => setName(e.target.value)} required />
             </div>
           )}
@@ -140,7 +106,14 @@ export default function LoginPage() {
             <input type="email" placeholder="you@email.com" value={email} onChange={e => setEmail(e.target.value)} required />
           </div>
           <div className={styles.field}>
-            <label>Password</label>
+            <div className={styles.labelRow}>
+              <label>Password</label>
+              {mode === 'login' && (
+                <button type="button" className={styles.forgotInline} onClick={() => switchMode('forgot')}>
+                  Forgot password?
+                </button>
+              )}
+            </div>
             <input type="password" placeholder="Min 6 characters" value={password} onChange={e => setPassword(e.target.value)} required />
           </div>
 
@@ -149,16 +122,6 @@ export default function LoginPage() {
           <button className={styles.submit} type="submit" disabled={loading}>
             {loading ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
           </button>
-
-          {mode === 'login' && (
-            <button
-              type="button"
-              className={styles.forgotLink}
-              onClick={() => switchMode('forgot')}
-            >
-              Forgot password?
-            </button>
-          )}
         </form>
       </div>
     </div>
