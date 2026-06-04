@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore'
+import { doc, updateDoc, serverTimestamp, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
 import { updateProfile } from 'firebase/auth'
 import { db, auth } from '../firebase/config'
 import Avatar from './Avatar'
@@ -92,17 +92,14 @@ export function EditProfileModal({ currentUser, onClose }) {
     formData.append('file', file)
     formData.append('upload_preset', CLOUDINARY_PRESET)
     formData.append('folder', 'buddychat_avatars')
-
     const res = await fetch(
       `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`,
       { method: 'POST', body: formData }
     )
-
     if (!res.ok) {
       const err = await res.json()
       throw new Error(err.error?.message || 'Upload failed')
     }
-
     const data = await res.json()
     return data.secure_url
   }
@@ -123,16 +120,30 @@ export function EditProfileModal({ currentUser, onClose }) {
 
       setStatus('Saving profile…')
 
+      // Update Firebase Auth
       await updateProfile(auth.currentUser, {
         displayName: name.trim(),
         photoURL: newPhotoURL,
       })
 
+      // Update user doc
       await updateDoc(doc(db, 'users', currentUser.uid), {
         displayName: name.trim(),
         photoURL: newPhotoURL,
         lastSeen: serverTimestamp(),
       })
+
+      // Update photo in all chats this user is part of
+      if (newPhotoURL !== photoURL) {
+        const q = query(collection(db, 'chats'), where('members', 'array-contains', currentUser.uid))
+        const snap = await getDocs(q)
+        const updates = snap.docs.map(d =>
+          updateDoc(doc(db, 'chats', d.id), {
+            [`memberPhotos.${currentUser.uid}`]: newPhotoURL
+          })
+        )
+        await Promise.all(updates)
+      }
 
       setStatus('✅ Saved!')
       setTimeout(() => onClose(true), 800)
@@ -160,18 +171,13 @@ export function EditProfileModal({ currentUser, onClose }) {
 
           {file && (
             <div style={{ fontSize: 12, color: 'var(--text2)', textAlign: 'center' }}>
-              📎 {file.name} ({Math.round(file.size/1024)}KB) — ready to upload
+              📎 {file.name} ({Math.round(file.size/1024)}KB)
             </div>
           )}
 
           <div className={styles.field}>
             <label>Display name</label>
-            <input
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Your name"
-              className={styles.input}
-            />
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="Your name" className={styles.input} />
           </div>
 
           <div className={styles.field}>
@@ -191,11 +197,7 @@ export function EditProfileModal({ currentUser, onClose }) {
             </div>
           )}
 
-          <button
-            className={styles.saveBtn}
-            onClick={handleSave}
-            disabled={saving || !name.trim()}
-          >
+          <button className={styles.saveBtn} onClick={handleSave} disabled={saving || !name.trim()}>
             {saving ? 'Please wait…' : 'Save changes'}
           </button>
         </div>
