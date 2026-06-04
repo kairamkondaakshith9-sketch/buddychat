@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore'
 import { updateProfile } from 'firebase/auth'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { db, storage, auth } from '../firebase/config'
 import Avatar from './Avatar'
 import { format } from 'date-fns'
@@ -22,7 +22,6 @@ function formatLastSeen(ts, online) {
   } catch { return 'Unknown' }
 }
 
-// View another user's profile
 export function UserProfileModal({ uid, currentUserId, onClose }) {
   const [profile, setProfile] = useState(null)
 
@@ -70,14 +69,14 @@ export function UserProfileModal({ uid, currentUserId, onClose }) {
   )
 }
 
-// Edit own profile
 export function EditProfileModal({ currentUser, onClose }) {
   const [name, setName] = useState(currentUser.displayName || '')
-  const [uploading, setUploading] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const [status, setStatus] = useState('')
   const [photoURL, setPhotoURL] = useState(currentUser.photoURL || null)
   const [preview, setPreview] = useState(null)
   const [file, setFile] = useState(null)
+  const [progress, setProgress] = useState(0)
+  const [saving, setSaving] = useState(false)
   const fileRef = useRef()
 
   function handleFileChange(e) {
@@ -86,41 +85,60 @@ export function EditProfileModal({ currentUser, onClose }) {
     if (f.size > 5 * 1024 * 1024) { alert('Image must be under 5MB'); return }
     setFile(f)
     setPreview(URL.createObjectURL(f))
+    setStatus('')
   }
 
   async function handleSave() {
+    if (!name.trim()) return
     setSaving(true)
+    setStatus('Saving…')
+
     try {
       let newPhotoURL = photoURL
 
-      // Upload photo if selected
       if (file) {
-        setUploading(true)
+        setStatus('Uploading photo…')
         const storageRef = ref(storage, `avatars/${currentUser.uid}`)
-        await uploadBytes(storageRef, file)
-        newPhotoURL = await getDownloadURL(storageRef)
-        setUploading(false)
+        
+        await new Promise((resolve, reject) => {
+          const uploadTask = uploadBytesResumable(storageRef, file)
+          uploadTask.on('state_changed',
+            (snapshot) => {
+              const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100)
+              setProgress(pct)
+              setStatus(`Uploading… ${pct}%`)
+            },
+            (error) => {
+              console.error('Upload error:', error)
+              reject(error)
+            },
+            async () => {
+              newPhotoURL = await getDownloadURL(uploadTask.snapshot.ref)
+              resolve()
+            }
+          )
+        })
       }
 
-      // Update Firebase Auth profile
+      setStatus('Saving profile…')
       await updateProfile(auth.currentUser, {
         displayName: name.trim(),
         photoURL: newPhotoURL,
       })
 
-      // Update Firestore user doc
       await updateDoc(doc(db, 'users', currentUser.uid), {
         displayName: name.trim(),
         photoURL: newPhotoURL,
         lastSeen: serverTimestamp(),
       })
 
-      onClose(true) // true = updated
+      setStatus('✅ Saved!')
+      setTimeout(() => onClose(true), 800)
     } catch (err) {
       console.error(err)
-      alert('Error saving: ' + err.message)
+      setStatus('❌ Error: ' + err.message)
+      setSaving(false)
     }
-    setSaving(false)
   }
 
   return (
@@ -138,6 +156,12 @@ export function EditProfileModal({ currentUser, onClose }) {
           </div>
           <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
 
+          {file && (
+            <div style={{ fontSize: 12, color: 'var(--text2)', textAlign: 'center' }}>
+              📎 {file.name} ({Math.round(file.size/1024)}KB)
+            </div>
+          )}
+
           <div className={styles.field}>
             <label>Display name</label>
             <input
@@ -153,12 +177,28 @@ export function EditProfileModal({ currentUser, onClose }) {
             <input value={currentUser.email} disabled className={`${styles.input} ${styles.disabled}`} />
           </div>
 
+          {status && (
+            <div style={{
+              fontSize: 13,
+              color: status.includes('❌') ? 'var(--red)' : status.includes('✅') ? 'var(--green)' : 'var(--text2)',
+              textAlign: 'center',
+              padding: '4px 0'
+            }}>
+              {status}
+              {progress > 0 && progress < 100 && (
+                <div style={{ marginTop: 6, height: 4, background: 'var(--bg3)', borderRadius: 2 }}>
+                  <div style={{ width: `${progress}%`, height: '100%', background: 'var(--accent)', borderRadius: 2, transition: 'width 0.3s' }} />
+                </div>
+              )}
+            </div>
+          )}
+
           <button
             className={styles.saveBtn}
             onClick={handleSave}
             disabled={saving || !name.trim()}
           >
-            {uploading ? 'Uploading photo…' : saving ? 'Saving…' : 'Save changes'}
+            {saving ? 'Please wait…' : 'Save changes'}
           </button>
         </div>
       </div>
