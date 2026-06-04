@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   collection, addDoc, onSnapshot, query, orderBy,
   serverTimestamp, doc, updateDoc, increment, writeBatch, getDoc
@@ -58,6 +58,23 @@ function ReadReceipt({ msg, currentUser, members }) {
   return <span className={styles.sentTick} title="Sent">✓✓</span>
 }
 
+function TypingIndicator({ names }) {
+  if (!names || names.length === 0) return null
+  const text = names.length === 1
+    ? `${names[0]} is typing`
+    : `${names.join(', ')} are typing`
+  return (
+    <div className={styles.typingRow}>
+      <div className={styles.typingBubble}>
+        <span className={styles.dot} />
+        <span className={styles.dot} />
+        <span className={styles.dot} />
+      </div>
+      <span className={styles.typingText}>{text}</span>
+    </div>
+  )
+}
+
 export default function ChatWindow({ chat, currentUser, onBack }) {
   const [messages, setMessages] = useState([])
   const [text, setText] = useState('')
@@ -65,8 +82,10 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
   const [showEmoji, setShowEmoji] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [otherUserProfile, setOtherUserProfile] = useState(null)
+  const [typingNames, setTypingNames] = useState([])
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
+  const typingTimeoutRef = useRef(null)
 
   const otherUserId = !chat.isGroup ? chat.members.find(id => id !== currentUser.uid) : null
   const chatName = chat.isGroup
@@ -74,7 +93,7 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
     : chat.memberNames?.[otherUserId] || 'Chat'
   const chatPhoto = chat.isGroup ? null : chat.memberPhotos?.[otherUserId] || null
 
-  // Load other user's live profile for last seen
+  // Live last seen
   useEffect(() => {
     if (!otherUserId) return
     const unsub = onSnapshot(doc(db, 'users', otherUserId), d => {
@@ -83,6 +102,7 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
     return unsub
   }, [otherUserId])
 
+  // Messages + mark as read
   useEffect(() => {
     const q = query(collection(db, 'chats', chat.id, 'messages'), orderBy('createdAt', 'asc'))
     const unsub = onSnapshot(q, async snap => {
@@ -105,9 +125,53 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
     return unsub
   }, [chat.id, currentUser.uid])
 
+  // Listen to typing indicators
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'chats', chat.id), snap => {
+      const data = snap.data()
+      const typing = data?.typing || {}
+      const now = Date.now()
+      // Only show typing if updated within last 4 seconds
+      const activeTypers = Object.entries(typing)
+        .filter(([uid, ts]) => uid !== currentUser.uid && ts && (now - ts) < 4000)
+        .map(([uid]) => chat.memberNames?.[uid] || 'Someone')
+      setTypingNames(activeTypers)
+    })
+    return unsub
+  }, [chat.id, currentUser.uid])
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, typingNames])
+
+  // Update typing status
+  const setTyping = useCallback(async (isTyping) => {
+    try {
+      await updateDoc(doc(db, 'chats', chat.id), {
+        [`typing.${currentUser.uid}`]: isTyping ? Date.now() : 0
+      })
+    } catch {}
+  }, [chat.id, currentUser.uid])
+
+  function handleTextChange(e) {
+    setText(e.target.value)
+    // Set typing = true
+    setTyping(true)
+    // Clear previous timeout
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+    // Stop typing after 3 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      setTyping(false)
+    }, 3000)
+  }
+
+  // Clear typing on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+      setTyping(false)
+    }
+  }, [setTyping])
 
   async function sendMessage(e) {
     e?.preventDefault()
@@ -116,6 +180,9 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
     setSending(true)
     setText('')
     setShowEmoji(false)
+    // Clear typing immediately on send
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+    setTyping(false)
     try {
       await addDoc(collection(db, 'chats', chat.id, 'messages'), {
         text: trimmed,
@@ -156,9 +223,11 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
             <div className={styles.chatSub}>
               {chat.isGroup
                 ? `${chat.members.length} members`
-                : otherUserProfile
-                  ? formatLastSeen(otherUserProfile.lastSeen, otherUserProfile.online)
-                  : 'Direct message'
+                : typingNames.length > 0
+                  ? <span className={styles.typingStatus}>typing…</span>
+                  : otherUserProfile
+                    ? formatLastSeen(otherUserProfile.lastSeen, otherUserProfile.online)
+                    : 'Direct message'
               }
             </div>
           </div>
@@ -194,6 +263,8 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
             </div>
           )
         })}
+
+        <TypingIndicator names={typingNames} />
         <div ref={bottomRef} />
       </div>
 
@@ -212,7 +283,7 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
           className={styles.input}
           placeholder="Type a message…"
           value={text}
-          onChange={e => setText(e.target.value)}
+          onChange={handleTextChange}
           onKeyDown={handleKey}
           rows={1}
         />
@@ -220,11 +291,7 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
       </form>
 
       {showProfile && otherUserId && (
-        <UserProfileModal
-          uid={otherUserId}
-          currentUserId={currentUser.uid}
-          onClose={() => setShowProfile(false)}
-        />
+        <UserProfileModal uid={otherUserId} currentUserId={currentUser.uid} onClose={() => setShowProfile(false)} />
       )}
     </div>
   )
