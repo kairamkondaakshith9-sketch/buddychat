@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   collection, addDoc, onSnapshot, query, orderBy,
-  serverTimestamp, doc, updateDoc, increment, writeBatch, getDoc
+  serverTimestamp, doc, updateDoc, increment, writeBatch, setDoc
 } from 'firebase/firestore'
 import { db } from '../firebase/config'
 import { format, isToday, isYesterday } from 'date-fns'
@@ -60,9 +60,7 @@ function ReadReceipt({ msg, currentUser, members }) {
 
 function TypingIndicator({ names }) {
   if (!names || names.length === 0) return null
-  const text = names.length === 1
-    ? `${names[0]} is typing`
-    : `${names.join(', ')} are typing`
+  const text = names.length === 1 ? `${names[0]} is typing…` : `${names.join(', ')} are typing…`
   return (
     <div className={styles.typingRow}>
       <div className={styles.typingBubble}>
@@ -86,12 +84,16 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
   const typingTimeoutRef = useRef(null)
+  const typingRef = useRef(null)
 
   const otherUserId = !chat.isGroup ? chat.members.find(id => id !== currentUser.uid) : null
-  const chatName = chat.isGroup
-    ? chat.groupName
-    : chat.memberNames?.[otherUserId] || 'Chat'
+  const chatName = chat.isGroup ? chat.groupName : chat.memberNames?.[otherUserId] || 'Chat'
   const chatPhoto = chat.isGroup ? null : chat.memberPhotos?.[otherUserId] || null
+
+  // Store typing doc ref
+  useEffect(() => {
+    typingRef.current = doc(db, 'typing', chat.id)
+  }, [chat.id])
 
   // Live last seen
   useEffect(() => {
@@ -102,7 +104,7 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
     return unsub
   }, [otherUserId])
 
-  // Messages + mark as read
+  // Messages
   useEffect(() => {
     const q = query(collection(db, 'chats', chat.id, 'messages'), orderBy('createdAt', 'asc'))
     const unsub = onSnapshot(q, async snap => {
@@ -125,53 +127,48 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
     return unsub
   }, [chat.id, currentUser.uid])
 
-  // Listen to typing indicators
+  // Listen to typing - separate collection
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'chats', chat.id), snap => {
+    const ref = doc(db, 'typing', chat.id)
+    const unsub = onSnapshot(ref, snap => {
+      if (!snap.exists()) { setTypingNames([]); return }
       const data = snap.data()
-      const typing = data?.typing || {}
       const now = Date.now()
-      // Only show typing if updated within last 4 seconds
-      const activeTypers = Object.entries(typing)
-        .filter(([uid, ts]) => uid !== currentUser.uid && ts && (now - ts) < 4000)
+      const active = Object.entries(data)
+        .filter(([uid, ts]) => uid !== currentUser.uid && ts && typeof ts === 'number' && (now - ts) < 4000)
         .map(([uid]) => chat.memberNames?.[uid] || 'Someone')
-      setTypingNames(activeTypers)
+      setTypingNames(active)
     })
     return unsub
-  }, [chat.id, currentUser.uid])
+  }, [chat.id, currentUser.uid, chat.memberNames])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, typingNames])
 
-  // Update typing status
-  const setTyping = useCallback(async (isTyping) => {
+  // Set typing status
+  const setTypingStatus = useCallback(async (isTyping) => {
     try {
-      await updateDoc(doc(db, 'chats', chat.id), {
-        [`typing.${currentUser.uid}`]: isTyping ? Date.now() : 0
-      })
-    } catch {}
+      await setDoc(doc(db, 'typing', chat.id), {
+        [currentUser.uid]: isTyping ? Date.now() : 0
+      }, { merge: true })
+    } catch(e) {}
   }, [chat.id, currentUser.uid])
 
-  function handleTextChange(e) {
-    setText(e.target.value)
-    // Set typing = true
-    setTyping(true)
-    // Clear previous timeout
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
-    // Stop typing after 3 seconds of inactivity
-    typingTimeoutRef.current = setTimeout(() => {
-      setTyping(false)
-    }, 3000)
-  }
-
-  // Clear typing on unmount
+  // Clear typing on unmount or chat change
   useEffect(() => {
     return () => {
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
-      setTyping(false)
+      setTypingStatus(false)
     }
-  }, [setTyping])
+  }, [setTypingStatus])
+
+  function handleTextChange(e) {
+    setText(e.target.value)
+    setTypingStatus(true)
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+    typingTimeoutRef.current = setTimeout(() => setTypingStatus(false), 3000)
+  }
 
   async function sendMessage(e) {
     e?.preventDefault()
@@ -180,9 +177,8 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
     setSending(true)
     setText('')
     setShowEmoji(false)
-    // Clear typing immediately on send
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
-    setTyping(false)
+    setTypingStatus(false)
     try {
       await addDoc(collection(db, 'chats', chat.id, 'messages'), {
         text: trimmed,
@@ -211,6 +207,7 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
   }
 
   const grouped = groupMessages(messages)
+  const isTyping = typingNames.length > 0
 
   return (
     <div className={styles.window} onClick={() => setShowEmoji(false)}>
@@ -223,7 +220,7 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
             <div className={styles.chatSub}>
               {chat.isGroup
                 ? `${chat.members.length} members`
-                : typingNames.length > 0
+                : isTyping
                   ? <span className={styles.typingStatus}>typing…</span>
                   : otherUserProfile
                     ? formatLastSeen(otherUserProfile.lastSeen, otherUserProfile.online)
@@ -263,7 +260,6 @@ export default function ChatWindow({ chat, currentUser, onBack }) {
             </div>
           )
         })}
-
         <TypingIndicator names={typingNames} />
         <div ref={bottomRef} />
       </div>
