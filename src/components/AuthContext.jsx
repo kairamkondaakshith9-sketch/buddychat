@@ -11,18 +11,22 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (u) {
-        const userRef = doc(db, 'users', u.uid)
-        const existing = await getDoc(userRef)
-        await setDoc(userRef, {
-          uid: u.uid,
-          email: u.email,
-          displayName: u.displayName || u.email.split('@')[0],
-          photoURL: u.photoURL || null,
-          lastSeen: serverTimestamp(),
-          online: true,
-          // Only set joinedAt on first time
-          ...(existing.exists() ? {} : { joinedAt: serverTimestamp() }),
-        }, { merge: true })
+        try {
+          const userRef = doc(db, 'users', u.uid)
+          const existing = await getDoc(userRef)
+          await setDoc(userRef, {
+            uid: u.uid,
+            email: u.email,
+            displayName: u.displayName || u.email.split('@')[0],
+            photoURL: u.photoURL || null,
+            lastSeen: serverTimestamp(),
+            online: true,
+            ...(existing.exists() ? {} : { joinedAt: serverTimestamp() }),
+          }, { merge: true })
+        } catch (err) {
+          console.error('Firestore update failed:', err)
+          // Still set user even if Firestore fails
+        }
       }
       setUser(u)
     })
