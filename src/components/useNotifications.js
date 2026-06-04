@@ -9,29 +9,33 @@ export async function requestNotificationPermission() {
 }
 
 export function useNotifications(currentUser, chats) {
-  const prevChats = useRef({})
+  const prevUnreadRef = useRef({})
+  const initializedRef = useRef(false)
 
   useEffect(() => {
-    if (!currentUser) return
-    // Request permission as soon as user is logged in
-    requestNotificationPermission()
-  }, [currentUser])
+    if (!('Notification' in window)) return
+    if (Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+  }, [])
 
   useEffect(() => {
     if (!currentUser || !chats.length) return
-    if (Notification.permission !== 'granted') return
 
-    // Update counts when tab is visible
-    if (document.visibilityState === 'visible') {
+    // On first load, just record current unread counts without notifying
+    if (!initializedRef.current) {
       chats.forEach(chat => {
-        prevChats.current[chat.id] = chat.unread?.[currentUser.uid] || 0
+        prevUnreadRef.current[chat.id] = chat.unread?.[currentUser.uid] || 0
       })
+      initializedRef.current = true
       return
     }
 
+    if (Notification.permission !== 'granted') return
+
     chats.forEach(chat => {
       const currentUnread = chat.unread?.[currentUser.uid] || 0
-      const prevUnread = prevChats.current[chat.id] ?? currentUnread
+      const prevUnread = prevUnreadRef.current[chat.id] ?? 0
 
       if (currentUnread > prevUnread) {
         const chatName = chat.isGroup
@@ -39,13 +43,26 @@ export function useNotifications(currentUser, chats) {
           : Object.entries(chat.memberNames || {})
               .find(([id]) => id !== currentUser.uid)?.[1] || 'Someone'
 
-        new Notification(`💬 ${chatName}`, {
-          body: chat.lastMessage || 'Sent you a message',
-          icon: '/icon-192.png',
-          tag: chat.id,
-        })
+        // Show notification regardless of tab visibility
+        try {
+          const notif = new Notification(`💬 ${chatName}`, {
+            body: chat.lastMessage || 'Sent you a message',
+            icon: '/icon-192.png',
+            badge: '/icon-192.png',
+            tag: chat.id,
+            renotify: true,
+            requireInteraction: false,
+          })
+          // Click notification to focus app
+          notif.onclick = () => {
+            window.focus()
+            notif.close()
+          }
+        } catch(e) {
+          console.log('Notification error:', e)
+        }
       }
-      prevChats.current[chat.id] = currentUnread
+      prevUnreadRef.current[chat.id] = currentUnread
     })
   }, [chats, currentUser])
 }
