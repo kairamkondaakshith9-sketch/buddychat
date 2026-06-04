@@ -1,28 +1,28 @@
 import { useState, useRef } from 'react'
 import { doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore'
 import { updateProfile } from 'firebase/auth'
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
-import { db, storage, auth } from '../firebase/config'
+import { db, auth } from '../firebase/config'
 import Avatar from './Avatar'
 import { format } from 'date-fns'
 import styles from './ProfileModal.module.css'
+
+const CLOUDINARY_CLOUD = 'deuxgybso'
+const CLOUDINARY_PRESET = 'buddychat_avatars'
 
 function formatLastSeen(ts, online) {
   if (online) return 'Online'
   if (!ts?.toDate) return 'Unknown'
   try {
     const d = ts.toDate()
-    const now = new Date()
-    const diff = now - d
+    const diff = new Date() - d
     if (diff < 60000) return 'Just now'
     if (diff < 3600000) return `${Math.floor(diff/60000)} min ago`
     if (diff < 86400000) return `Today at ${format(d, 'h:mm a')}`
-    if (diff < 172800000) return `Yesterday at ${format(d, 'h:mm a')}`
     return format(d, 'MMM d, yyyy')
   } catch { return 'Unknown' }
 }
 
-export function UserProfileModal({ uid, currentUserId, onClose }) {
+export function UserProfileModal({ uid, onClose }) {
   const [profile, setProfile] = useState(null)
 
   useState(() => {
@@ -75,7 +75,6 @@ export function EditProfileModal({ currentUser, onClose }) {
   const [photoURL, setPhotoURL] = useState(currentUser.photoURL || null)
   const [preview, setPreview] = useState(null)
   const [file, setFile] = useState(null)
-  const [progress, setProgress] = useState(0)
   const [saving, setSaving] = useState(false)
   const fileRef = useRef()
 
@@ -88,6 +87,26 @@ export function EditProfileModal({ currentUser, onClose }) {
     setStatus('')
   }
 
+  async function uploadToCloudinary(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('upload_preset', CLOUDINARY_PRESET)
+    formData.append('folder', 'buddychat_avatars')
+
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`,
+      { method: 'POST', body: formData }
+    )
+
+    if (!res.ok) {
+      const err = await res.json()
+      throw new Error(err.error?.message || 'Upload failed')
+    }
+
+    const data = await res.json()
+    return data.secure_url
+  }
+
   async function handleSave() {
     if (!name.trim()) return
     setSaving(true)
@@ -98,29 +117,12 @@ export function EditProfileModal({ currentUser, onClose }) {
 
       if (file) {
         setStatus('Uploading photo…')
-        const storageRef = ref(storage, `avatars/${currentUser.uid}`)
-        
-        await new Promise((resolve, reject) => {
-          const uploadTask = uploadBytesResumable(storageRef, file)
-          uploadTask.on('state_changed',
-            (snapshot) => {
-              const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100)
-              setProgress(pct)
-              setStatus(`Uploading… ${pct}%`)
-            },
-            (error) => {
-              console.error('Upload error:', error)
-              reject(error)
-            },
-            async () => {
-              newPhotoURL = await getDownloadURL(uploadTask.snapshot.ref)
-              resolve()
-            }
-          )
-        })
+        newPhotoURL = await uploadToCloudinary(file)
+        setStatus('Photo uploaded! ✓')
       }
 
       setStatus('Saving profile…')
+
       await updateProfile(auth.currentUser, {
         displayName: name.trim(),
         photoURL: newPhotoURL,
@@ -158,7 +160,7 @@ export function EditProfileModal({ currentUser, onClose }) {
 
           {file && (
             <div style={{ fontSize: 12, color: 'var(--text2)', textAlign: 'center' }}>
-              📎 {file.name} ({Math.round(file.size/1024)}KB)
+              📎 {file.name} ({Math.round(file.size/1024)}KB) — ready to upload
             </div>
           )}
 
@@ -182,14 +184,10 @@ export function EditProfileModal({ currentUser, onClose }) {
               fontSize: 13,
               color: status.includes('❌') ? 'var(--red)' : status.includes('✅') ? 'var(--green)' : 'var(--text2)',
               textAlign: 'center',
-              padding: '4px 0'
+              padding: '4px 0',
+              fontWeight: 500
             }}>
               {status}
-              {progress > 0 && progress < 100 && (
-                <div style={{ marginTop: 6, height: 4, background: 'var(--bg3)', borderRadius: 2 }}>
-                  <div style={{ width: `${progress}%`, height: '100%', background: 'var(--accent)', borderRadius: 2, transition: 'width 0.3s' }} />
-                </div>
-              )}
             </div>
           )}
 
