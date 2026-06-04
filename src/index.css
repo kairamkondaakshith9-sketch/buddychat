@@ -11,7 +11,6 @@
   --border2:   rgba(0,0,0,0.14);
   --accent:    #2a5298;
   --accent2:   #1a3d7a;
-  --accent-glow: rgba(42,82,152,0.15);
   --green:     #1a9e6a;
   --red:       #e53e3e;
   --text:      #1a202c;
@@ -21,7 +20,6 @@
   --radius-sm: 8px;
   --font:      'DM Sans', sans-serif;
   --mono:      'Space Mono', monospace;
-  --shadow:    0 4px 24px rgba(0,0,0,0.08);
 }
 
 html, body, #root {
@@ -33,17 +31,14 @@ html, body, #root {
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  overflow: hidden;
 }
 
-button { font-family: var(--font); cursor: pointer; border: none; }
-input, textarea { font-family: var(--font); }
+button { font-family: var(--font); cursor: pointer; border: none; -webkit-tap-highlight-color: transparent; }
+input, textarea { font-family: var(--font); -webkit-appearance: none; }
 
-::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
 
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
-
-@media (max-width: 640px) {
-  :root { font-size: 14px; }
-}

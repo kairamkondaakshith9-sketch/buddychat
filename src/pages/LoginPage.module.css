@@ -1,40 +1,39 @@
 .page {
-  min-height: 100vh;
   min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--bg);
   padding: 16px;
+  overflow-y: auto;
 }
 
 .card {
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   background: var(--bg2);
   border: 1px solid var(--border2);
   border-radius: 20px;
-  padding: 28px;
+  padding: 28px 24px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.10);
 }
 
-.logo { font-size: 36px; text-align: center; margin-bottom: 8px; }
+.logo { font-size: 36px; text-align: center; margin-bottom: 6px; }
 
 .title {
   font-family: var(--mono);
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   text-align: center;
   color: var(--text);
-  letter-spacing: -0.5px;
 }
 
 .subtitle {
   text-align: center;
   color: var(--text2);
-  font-size: 13px;
-  margin-top: 3px;
-  margin-bottom: 18px;
+  font-size: 14px;
+  margin-top: 4px;
+  margin-bottom: 20px;
 }
 
 .tabs {
@@ -42,15 +41,15 @@
   background: var(--bg3);
   border-radius: var(--radius-sm);
   padding: 4px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   gap: 4px;
 }
 
 .tab {
   flex: 1;
-  padding: 8px;
+  padding: 10px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   background: transparent;
   color: var(--text2);
@@ -58,12 +57,13 @@
   border: none;
   cursor: pointer;
   font-family: var(--font);
+  min-height: 42px;
 }
 .tab.active { background: var(--accent); color: #fff; }
 
-.form { display: flex; flex-direction: column; gap: 12px; }
+.form { display: flex; flex-direction: column; gap: 14px; }
 
-.field { display: flex; flex-direction: column; gap: 5px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
 
 .labelRow {
   display: flex;
@@ -71,18 +71,21 @@
   justify-content: space-between;
 }
 
-.field label { font-size: 12px; font-weight: 500; color: var(--text2); }
+.field label { font-size: 13px; font-weight: 500; color: var(--text2); }
 
 .field input {
   background: var(--bg3);
   border: 1px solid var(--border2);
   border-radius: var(--radius-sm);
-  padding: 10px 12px;
+  padding: 12px 14px;
   color: var(--text);
-  font-size: 14px;
+  font-size: 16px;
   outline: none;
   transition: border-color 0.2s;
   font-family: var(--font);
+  -webkit-appearance: none;
+  height: 48px;
+  width: 100%;
 }
 .field input:focus { border-color: var(--accent); }
 
@@ -91,21 +94,22 @@
   color: var(--red);
   background: rgba(229,62,62,0.08);
   border-radius: var(--radius-sm);
-  padding: 8px 12px;
+  padding: 10px 14px;
 }
 
 .submit {
-  padding: 11px;
+  padding: 14px;
   background: var(--accent);
   color: #fff;
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   transition: background 0.2s, opacity 0.2s;
-  margin-top: 2px;
   border: none;
   cursor: pointer;
   font-family: var(--font);
+  height: 50px;
+  width: 100%;
 }
 .submit:hover { background: var(--accent2); }
 .submit:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -114,26 +118,24 @@
   background: none;
   border: none;
   color: var(--accent);
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
   text-align: center;
-  padding: 4px;
-  transition: opacity 0.2s;
+  padding: 6px;
   font-family: var(--font);
 }
-.forgotLink:hover { opacity: 0.75; text-decoration: underline; }
+.forgotLink:hover { text-decoration: underline; }
 
 .forgotInline {
   background: none;
   border: none;
   color: var(--accent);
-  font-size: 12px;
+  font-size: 13px;
   cursor: pointer;
   font-family: var(--font);
-  transition: opacity 0.2s;
   padding: 0;
 }
-.forgotInline:hover { opacity: 0.75; text-decoration: underline; }
+.forgotInline:hover { text-decoration: underline; }
 
 .backLink {
   background: none;
@@ -142,21 +144,20 @@
   font-size: 14px;
   cursor: pointer;
   text-align: center;
-  padding: 8px;
-  transition: color 0.2s;
+  padding: 10px;
   font-family: var(--font);
+  width: 100%;
 }
-.backLink:hover { color: var(--text); }
 
 .successBox {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 8px 0;
   text-align: center;
 }
-.successIcon { font-size: 40px; }
+.successIcon { font-size: 44px; }
 .successBox p { font-size: 14px; color: var(--text); line-height: 1.6; }
 .successHint {
   font-size: 13px !important;
@@ -165,4 +166,5 @@
   padding: 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
+  width: 100%;
 }

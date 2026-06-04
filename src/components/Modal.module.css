@@ -1,57 +1,77 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0,0,0,0.5);
   backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   z-index: 100;
-  padding: 16px;
+}
+
+@media (min-width: 641px) {
+  .overlay { align-items: center; padding: 16px; }
 }
 
 .modal {
   background: var(--bg2);
   border: 1px solid var(--border2);
-  border-radius: 20px;
+  border-radius: 20px 20px 0 0;
   width: 100%;
-  max-width: 440px;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.12);
+  max-height: 90dvh;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.12);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 641px) {
+  .modal {
+    border-radius: 20px;
+    max-width: 440px;
+    max-height: 85dvh;
+  }
 }
 
 .modalHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 16px 18px;
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 .modalHeader h3 { font-size: 16px; font-weight: 600; color: var(--text); }
 
 .closeBtn {
   background: none;
   color: var(--text3);
-  font-size: 16px;
-  padding: 4px 6px;
-  border-radius: 6px;
+  font-size: 18px;
+  padding: 6px;
+  border-radius: 8px;
   transition: color 0.2s;
   border: none;
   cursor: pointer;
+  min-width: 36px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .closeBtn:hover { color: var(--text); }
 
 .tabRow {
   display: flex;
   gap: 4px;
-  padding: 10px 16px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .tabBtn {
   flex: 1;
-  padding: 8px;
-  border-radius: 6px;
+  padding: 10px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   background: transparent;
@@ -63,6 +83,8 @@
   gap: 6px;
   transition: all 0.2s;
   cursor: pointer;
+  min-height: 42px;
+  font-family: var(--font);
 }
 .tabBtn:hover { background: var(--bg3); }
 .tabActive { background: var(--accent) !important; color: #fff !important; }
@@ -82,29 +104,32 @@
 }
 
 .modalBody {
-  padding: 14px 16px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 70vh;
   overflow-y: auto;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
 }
 
 .searchInput {
   width: 100%;
-  padding: 10px 14px;
+  padding: 12px 14px;
   background: var(--bg3);
   border: 1px solid var(--border2);
   border-radius: var(--radius-sm);
   color: var(--text);
-  font-size: 14px;
+  font-size: 16px;
   outline: none;
   transition: border-color 0.2s;
   font-family: var(--font);
+  height: 48px;
+  -webkit-appearance: none;
 }
 .searchInput:focus { border-color: var(--accent); }
 
-.hint { font-size: 13px; color: var(--text3); text-align: center; padding: 8px; }
+.hint { font-size: 13px; color: var(--text3); text-align: center; padding: 12px; }
 
 .userList { display: flex; flex-direction: column; gap: 4px; }
 
@@ -112,21 +137,23 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 12px;
   border-radius: var(--radius-sm);
   background: none;
   border: 1px solid transparent;
   text-align: left;
   cursor: pointer;
   transition: background 0.15s;
+  min-height: 60px;
+  width: 100%;
 }
-.userItem:hover { background: var(--bg3); }
+.userItem:hover, .userItem:active { background: var(--bg3); }
 .selectedItem { background: var(--bg3); border-color: var(--accent); }
 
 .uname { font-size: 14px; font-weight: 500; color: var(--text); }
-.uemail { font-size: 12px; color: var(--text2); }
+.uemail { font-size: 12px; color: var(--text2); margin-top: 2px; }
 
-.checkmark { color: var(--accent); font-size: 16px; font-weight: 700; }
+.checkmark { color: var(--accent); font-size: 18px; font-weight: 700; flex-shrink: 0; }
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip {
@@ -137,77 +164,78 @@
   color: #fff;
   font-size: 12px;
   font-weight: 500;
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: 999px;
 }
-.chip button { background: none; color: rgba(255,255,255,0.7); font-size: 12px; line-height: 1; cursor: pointer; border: none; }
-.chip button:hover { color: #fff; }
+.chip button { background: none; color: rgba(255,255,255,0.7); font-size: 14px; line-height: 1; cursor: pointer; border: none; }
 
 .actionBtn {
-  padding: 6px 12px;
+  padding: 8px 14px;
   background: var(--accent);
   color: #fff;
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 500;
   border: none;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.2s;
   flex-shrink: 0;
   font-family: var(--font);
+  min-height: 36px;
 }
-.actionBtn:hover { background: var(--accent2); }
+.actionBtn:active { opacity: 0.8; }
 
 .actionBtnGreen {
-  padding: 6px 12px;
+  padding: 8px 14px;
   background: var(--green);
   color: #fff;
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 500;
   border: none;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
   font-family: var(--font);
+  min-height: 36px;
 }
 
 .actionBtnRed {
-  padding: 6px 10px;
+  padding: 8px 12px;
   background: var(--red);
   color: #fff;
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 500;
   border: none;
   cursor: pointer;
   flex-shrink: 0;
   font-family: var(--font);
+  min-height: 36px;
 }
 
 .statusTag {
   font-size: 12px;
   color: var(--text3);
-  padding: 4px 8px;
+  padding: 6px 10px;
   background: var(--bg3);
-  border-radius: 6px;
+  border-radius: 8px;
   flex-shrink: 0;
 }
 
 .createBtn {
   width: 100%;
-  padding: 12px;
+  padding: 14px;
   background: var(--accent);
   color: #fff;
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   margin-top: 4px;
-  transition: background 0.2s, opacity 0.2s;
   border: none;
   cursor: pointer;
   font-family: var(--font);
+  min-height: 50px;
 }
-.createBtn:hover:not(:disabled) { background: var(--accent2); }
+.createBtn:active { opacity: 0.8; }
 .createBtn:disabled { opacity: 0.4; cursor: not-allowed; }
